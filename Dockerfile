@@ -1,5 +1,5 @@
-# Используем официальный образ OpenJDK 21 с Maven
-FROM maven:3.8.6-openjdk-21-slim AS build
+# Используем официальный образ Maven с поддержкой OpenJDK 21
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Используем официальный образ OpenJDK 21 для запуска приложения
-FROM openjdk:21-jdk-slim
+FROM eclipse-temurin:21-jdk-jammy
 
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
