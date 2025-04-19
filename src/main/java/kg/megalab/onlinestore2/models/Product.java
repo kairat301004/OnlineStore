@@ -36,6 +36,8 @@ public class Product {
     @JoinColumn
     private User user;
     private LocalDateTime dateOfCreated;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @PrePersist
     private void init() {

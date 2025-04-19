@@ -39,6 +39,14 @@ public class User implements UserDetails {
     private List<Product> products = new ArrayList<>();
     private LocalDateTime dateOfCreated;
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_favorites",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    private List<Product> favorites = new ArrayList<>();
+
     @PrePersist
     private void init() {
         dateOfCreated = LocalDateTime.now();

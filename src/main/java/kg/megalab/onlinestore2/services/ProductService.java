@@ -1,7 +1,9 @@
 package kg.megalab.onlinestore2.services;
+
 import kg.megalab.onlinestore2.models.Image;
 import kg.megalab.onlinestore2.models.Product;
 import kg.megalab.onlinestore2.models.User;
+import kg.megalab.onlinestore2.models.enums.Role;
 import kg.megalab.onlinestore2.repositories.ProductRepository;
 import kg.megalab.onlinestore2.repositories.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -31,28 +34,29 @@ public class ProductService {
         }
     }
 
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
     public void saveProduct(Principal principal, Product product, MultipartFile file1, MultipartFile file2, MultipartFile file3) throws IOException {
         product.setUser(getUserByPrincipal(principal));
-        Image image1;
-        Image image2;
-        Image image3;
         if (file1.getSize() != 0) {
-            image1 = toImageEntity(file1);
+            Image image1 = toImageEntity(file1);
             image1.setPreviewImage(true);
             product.addImageToProduct(image1);
         }
         if (file2.getSize() != 0) {
-            image2 = toImageEntity(file2);
+            Image image2 = toImageEntity(file2);
             product.addImageToProduct(image2);
         }
         if (file3.getSize() != 0) {
-            image3 = toImageEntity(file3);
+            Image image3 = toImageEntity(file3);
             product.addImageToProduct(image3);
         }
         log.info("Saving new Product. Title: {}; Author email: {}", product.getTitle(), product.getUser().getEmail());
         Product productFromDb = productRepository.save(product);
         productFromDb.setPreviewImageId(productFromDb.getImages().get(0).getId());
-        productRepository.save(product);
+        productRepository.save(productFromDb);
     }
 
     public User getUserByPrincipal(Principal principal) {
@@ -70,15 +74,16 @@ public class ProductService {
         return image;
     }
 
+
     public void deleteProduct(User user, Long id) {
-        Product product = productRepository.findById(id)
-                .orElse(null);
+        Product product = productRepository.findById(id).orElse(null);
         if (product != null) {
-            if (product.getUser().getId().equals(user.getId())) {
+            // Проверка, является ли пользователь администратором
+            if (user.getRoles().contains(Role.ROLE_ADMIN) || product.getUser().getId().equals(user.getId())) {
                 productRepository.delete(product);
-                log.info("Product with id = {} was deleted", id);
+                log.info("Product with id = {} was deleted by user {}", id, user.getEmail());
             } else {
-                log.error("User: {} haven't this product with id = {}", user.getEmail(), id);
+                log.error("User: {} doesn't have permission to delete product with id = {}", user.getEmail(), id);
             }
         } else {
             log.error("Product with id = {} is not found", id);

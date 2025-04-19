@@ -1,9 +1,16 @@
 package kg.megalab.onlinestore2.controllers;
 
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.PdfWriter;
+import jakarta.servlet.http.HttpServletResponse;
 import kg.megalab.onlinestore2.models.Product;
 import kg.megalab.onlinestore2.models.User;
 import kg.megalab.onlinestore2.services.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.List;
+
 @Controller
 @RequiredArgsConstructor
 public class ProductController {
@@ -49,8 +58,9 @@ public class ProductController {
 
     @PostMapping("/product/delete/{id}")
     public String deleteProduct(@PathVariable Long id, Principal principal) {
-        productService.deleteProduct(productService.getUserByPrincipal(principal), id);
-        return "redirect:/my/products";
+        User user = productService.getUserByPrincipal(principal);
+        productService.deleteProduct(user, id);
+        return "redirect:/"; // Перенаправление на главную страницу
     }
 
     @GetMapping("/my/products")
@@ -59,5 +69,36 @@ public class ProductController {
         model.addAttribute("user", user);
         model.addAttribute("products", user.getProducts());
         return "my-products";
+    }
+
+    @GetMapping("/product/{id}/pdf")
+    public void getProductPdf(@PathVariable Long id, HttpServletResponse response) throws IOException, DocumentException {
+        Product product = productService.getProductById(id);
+        if (product == null) {
+            response.sendError(HttpStatus.NOT_FOUND.value(), "Product not found");
+            return;
+        }
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=product_" + product.getId() + ".pdf");
+
+        Document document = new Document();
+        PdfWriter.getInstance(document, response.getOutputStream());
+        document.open();
+
+        // Заголовок документа
+        document.add(new Paragraph("Информация о товаре", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18)));
+
+        // Информация о товаре
+        document.add(new Paragraph("Название: " + product.getTitle()));
+        document.add(new Paragraph("Цена: " + product.getPrice() + " ₽"));
+        document.add(new Paragraph("Город: " + product.getCity()));
+        document.add(new Paragraph("Описание: " + product.getDescription()));
+
+        // Контактная информация продавца
+        document.add(new Paragraph("Продавец: " + product.getUser().getName()));
+        document.add(new Paragraph("Телефон: " + product.getUser().getPhoneNumber()));
+
+        document.close();
     }
 }

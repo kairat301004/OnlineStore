@@ -1,6 +1,7 @@
 package kg.megalab.onlinestore2.services;
 
 import kg.megalab.onlinestore2.models.Image;
+import kg.megalab.onlinestore2.models.Product;
 import kg.megalab.onlinestore2.models.User;
 import kg.megalab.onlinestore2.models.enums.Role;
 import kg.megalab.onlinestore2.repositories.UserRepository;
@@ -22,6 +23,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ImageService imageService;
+    private final ProductService productService;
 
     public boolean createUser(User user) {
         String email = user.getEmail();
@@ -81,5 +83,28 @@ public class UserService {
             user.setAvatar(avatar);
             userRepository.save(user);
         }
+    }
+
+    public void addToFavorites(Principal principal, Long productId) {
+        User user = getUserByPrincipal(principal);
+        Product product = productService.getProductById(productId);
+        if (product != null) {
+            user.getFavorites().add(product);
+            userRepository.save(user);
+        }
+    }
+
+    public void removeFromFavorites(Principal principal, Long productId) {
+        User user = getUserByPrincipal(principal);
+        Product product = productService.getProductById(productId);
+        if (product != null) {
+            user.getFavorites().remove(product);
+            userRepository.save(user);
+        }
+    }
+
+    public List<Product> getFavorites(Principal principal) {
+        User user = getUserByPrincipal(principal);
+        return user.getFavorites();
     }
 }

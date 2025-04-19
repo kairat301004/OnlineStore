@@ -1,3 +1,4 @@
+<#ftl encoding="UTF-8">
 <#import "blocks/template.ftlh" as t>
 <@t.template userByPrincipal>
     <h1 style="text-align: center">Информация о пользователе</h1>
